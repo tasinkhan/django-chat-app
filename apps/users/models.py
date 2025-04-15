@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import Group, Permission
 from apps.organizations.models import Organization
+from apps.roles_permissions.models import Role
 
 
 class User(AbstractUser):
@@ -10,6 +11,13 @@ class User(AbstractUser):
     """
     organization = models.ForeignKey(
         Organization,
+        on_delete=models.CASCADE,
+        related_name='users',
+        null=True,
+        blank=True
+    )
+    role = models.ForeignKey(
+        Role,
         on_delete=models.CASCADE,
         related_name='users',
         null=True,
