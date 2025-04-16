@@ -22,14 +22,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def disconnect(self, close_code):
-        if hasattr(self, "channel_layer") and self.room_group_name:
-            try:
-                await self.channel_layer.group_discard(
-                    self.room_group_name, self.channel_name
-                )
-                print(f"User disconnected from {self.room_group_name}")
-            except Exception as e:
-                print(f"Error during disconnect: {e}")
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     @database_sync_to_async
     def get_username(self, user):
@@ -45,9 +38,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return User.objects.get(id=user_id)
         except User.DoesNotExist:
             return None
-
-    async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     # Receive message from WebSocket
     async def receive(self, text_data):
