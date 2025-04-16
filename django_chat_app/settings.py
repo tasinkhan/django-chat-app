@@ -82,7 +82,7 @@ DATABASES = {
         'NAME': 'django_chat_app',
         'USER': 'postgres',
         'PASSWORD': '12345',
-        'HOST': 'localhost',
+        'HOST': 'db_master',
         'PORT': 5432,
     },
     'replica': {
@@ -90,7 +90,7 @@ DATABASES = {
         'NAME': 'django_chat_app',
         'USER': 'postgres',
         'PASSWORD': '12345',
-        'HOST': 'localhost',
+        'HOST': 'db_replica',
         'PORT': 5432,
     },
 }
@@ -148,4 +148,13 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 }
+
+# Redis for Celery
+CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_RESULT_BACKEND = 'redis://redis:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@djangochat.local'
 

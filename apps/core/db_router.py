@@ -1,6 +1,6 @@
 class MasterSlaveRouter:
     def db_for_read(self, model, **hints):
-        return "replica"
+        return "default"
 
     def db_for_write(self, model, **hints):
         return "default"
