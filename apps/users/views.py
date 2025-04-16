@@ -8,9 +8,7 @@ from rest_framework.authentication import TokenAuthentication
 from .models import User
 from .serializers import UserSerializer
 from apps.core.tasks import send_welcome_email
-
-# Create your views here.
-
+from django.contrib.auth.hashers import make_password
 
 class UserBulkCreateAPIView(APIView):
     def post(self, request, *args, **kwargs):
@@ -23,12 +21,16 @@ class UserBulkCreateAPIView(APIView):
         if serializer.is_valid():
             # Collect the users to be bulk created
             users_to_create = []
-            email_queue = []  
+            email_queue = []
             print("1")
             if many:
                 for validated_data in serializer.validated_data:
                     role = validated_data["role"]
                     organization = validated_data["organization"]
+                    password = validated_data["password"]
+
+                    # Hash the password if it's not already hashed
+                    hashed_password = make_password(password)
 
                     # Create the User instance
                     user_instance = User(
@@ -36,10 +38,12 @@ class UserBulkCreateAPIView(APIView):
                         email=validated_data["email"],
                         role=role,
                         organization=organization,
-                        password=validated_data["password"],
+                        password=hashed_password,
                     )
                     users_to_create.append(user_instance)
-                    email_queue.append((validated_data["email"], validated_data["username"]))
+                    email_queue.append(
+                        (validated_data["email"], validated_data["username"])
+                    )
 
                 # Bulk create the users
                 User.objects.bulk_create(users_to_create)
@@ -53,7 +57,11 @@ class UserBulkCreateAPIView(APIView):
                     status=status.HTTP_201_CREATED,
                 )
             else:
-                User.objects.create(**serializer.validated_data)
+                validated_data = serializer.validated_data
+                password = validated_data.get("password")
+                validated_data["password"] = make_password(password)
+                User.objects.create(**validated_data)
+
                 return Response(
                     {"detail": "User created successfully."},
                     status=status.HTTP_201_CREATED,

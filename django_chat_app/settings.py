@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.organizations',
     'apps.roles_permissions',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [
