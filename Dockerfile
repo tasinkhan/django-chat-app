@@ -22,6 +22,3 @@ COPY . .
 
 # Expose the port Django will run on
 EXPOSE 8000
-
-# Run the Django application, waiting for the database to be ready before running migrations and starting the server
-CMD ["bash", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
