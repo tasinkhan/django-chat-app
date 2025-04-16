@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'apps.organizations',
     'apps.roles_permissions',
     'rest_framework_simplejwt',
+    'apps.chat',
 ]
 
 MIDDLEWARE = [
@@ -159,3 +160,11 @@ CELERY_TASK_SERIALIZER = 'json'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@djangochat.local'
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('redis', 6379)],
+        },
+    },
+}

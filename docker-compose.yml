@@ -5,6 +5,8 @@ services:
     container_name: django_web
     environment:
       - DEBUG=1
+      - DEBUG=True
+      - PYTHONUNBUFFERED=1
       - DATABASE_URL=postgres://postgres:12345@db_master:5432/django_chat_app
     depends_on:
       db_master:
@@ -15,7 +17,7 @@ services:
       - media_volume:/app/media
     ports:
       - "8000:8000"
-    command: ["bash", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+    command: ["bash", "-c", "python manage.py migrate && daphne django_chat_app.asgi:application --bind 0.0.0.0 --port 8000"]
 
   db_master:
     image: postgres:14
@@ -56,6 +58,20 @@ services:
     command: ["bash", "-c", "/wait-for-it.sh db_master 5432 && /docker-entrypoint-initdb.d/replica-entrypoint.sh"]
     ports:
       - "5433:5432"
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # Celery worker
+  # celery:
+  #   build: .
+  #   command: ["celery", "-A", "django_chat_app", "worker", "--loglevel=info", "--concurrency=4"]
+  #   depends_on:
+  #     - redis
+  #   volumes:
+  #     - .:/app
 
 volumes:
   db_master_data:
