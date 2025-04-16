@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from .models import User
 from .serializers import UserSerializer
-from apps.core.tasks import send_welcome_email
+from apps.core.tasks import send_bulk_email
 from django.contrib.auth.hashers import make_password
 
 class UserBulkCreateAPIView(APIView):
@@ -48,9 +48,10 @@ class UserBulkCreateAPIView(APIView):
                 # Bulk create the users
                 User.objects.bulk_create(users_to_create)
 
-                # Send welcome emails asynchronously
-                # for email, username in email_queue:
-                #     send_welcome_email.delay(email, username)
+                # Send welcome emails to all users asynchronously
+                subject = "Welcome to Our Platform"
+                message = "Hello, welcome to our platform. Your account has been created successfully!"
+                send_bulk_email.delay(subject, message, email_queue)
 
                 return Response(
                     {"detail": "Users created successfully."},

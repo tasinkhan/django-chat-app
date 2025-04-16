@@ -79,15 +79,15 @@ services:
     ports:
       - "6379:6379"
 
-  # celery:
-  #   build: .
-  #   container_name: celery_worker
-  #   command: ["celery", "-A", "django_chat_app", "worker", "--loglevel=info", "--concurrency=4"]
-  #   depends_on:
-  #     - redis
-  #     - web
-  #   volumes:
-  #     - .:/app
+  celery:
+    build: .
+    container_name: celery_worker
+    command: ["celery", "-A", "django_chat_app", "worker", "--loglevel=info", "--concurrency=4"]
+    depends_on:
+      - redis
+      - web
+    volumes:
+      - .:/app
 
   nginx:
     image: nginx:alpine
