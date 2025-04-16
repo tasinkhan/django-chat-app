@@ -38,10 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_yasg',
+    'rest_framework_simplejwt',
     'apps.users',
     'apps.organizations',
     'apps.roles_permissions',
-    'rest_framework_simplejwt',
     'apps.chat',
 ]
 
