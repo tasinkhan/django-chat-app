@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  db_master:
+    image: postgres:14
+    container_name: db_master
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: django_chat_app
+    volumes:
+      - ./compose/postgres/master/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./compose/postgres/master/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./compose/postgres/master/pg_hba.conf:/etc/postgresql/pg_hba.conf  # Ensure pg_hba.conf is mapped
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    ports:
+      - "5432:5432"
+
+  db_replica:
+    image: postgres:14
+    container_name: db_replica
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: django_chat_app
+      PGPASSWORD: 12345
+    depends_on:
+      - db_master
+    volumes:
+    - ./compose/postgres/replica/replica-entrypoint.sh:/docker-entrypoint-initdb.d/replica-entrypoint.sh
+    - ./compose/postgres/replica/postgresql.conf:/etc/postgresql/postgresql.conf
+    - ./compose/postgres/replica/wait-for-it.sh:/wait-for-it.sh
+    command: ["bash", "-c", "/wait-for-it.sh db_master 5432 && /docker-entrypoint-initdb.d/replica-entrypoint.sh"]
+    ports:
+      - "5433:5432"
