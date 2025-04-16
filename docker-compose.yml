@@ -1,10 +1,14 @@
+version: '3.8'
 
 services:
   web:
     build: .
     container_name: django_web
+    command: >
+      bash -c "python manage.py migrate &&
+               python manage.py collectstatic --noinput &&
+               gunicorn django_chat_app.wsgi:application -b 0.0.0.0:8000"
     environment:
-      - DEBUG=1
       - DEBUG=True
       - PYTHONUNBUFFERED=1
       - DATABASE_URL=postgres://postgres:12345@db_master:5432/django_chat_app
@@ -15,9 +19,19 @@ services:
       - .:/app
       - static_volume:/app/static
       - media_volume:/app/media
-    ports:
-      - "8000:8000"
-    command: ["bash", "-c", "python manage.py migrate && daphne django_chat_app.asgi:application --bind 0.0.0.0 --port 8000"]
+    expose:
+      - "8000"
+
+  daphne:
+    build: .
+    container_name: django_daphne
+    command: daphne -b 0.0.0.0 -p 8001 django_chat_app.asgi:application
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    expose:
+      - "8001"
 
   db_master:
     image: postgres:14
@@ -30,7 +44,7 @@ services:
       - ./compose/postgres/master/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./compose/postgres/master/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./compose/postgres/master/pg_hba.conf:/etc/postgresql/pg_hba.conf
-      - db_master_data:/var/lib/postgresql/data  # Persist data
+      - db_master_data:/var/lib/postgresql/data
     command: postgres -c config_file=/etc/postgresql/postgresql.conf
     ports:
       - "5432:5432"
@@ -49,29 +63,43 @@ services:
       POSTGRES_DB: django_chat_app
       PGPASSWORD: 12345
     depends_on:
-      - web  # db_replica now depends on web, not db_master
+      - web
     volumes:
       - ./compose/postgres/replica/replica-entrypoint.sh:/docker-entrypoint-initdb.d/replica-entrypoint.sh
       - ./compose/postgres/replica/postgresql.conf:/etc/postgresql/postgresql.conf
       - ./compose/postgres/replica/wait-for-it.sh:/wait-for-it.sh
-      - db_replica_data:/var/lib/postgresql/data  # Persist data
+      - db_replica_data:/var/lib/postgresql/data
     command: ["bash", "-c", "/wait-for-it.sh db_master 5432 && /docker-entrypoint-initdb.d/replica-entrypoint.sh"]
     ports:
       - "5433:5432"
 
   redis:
     image: redis:alpine
+    container_name: redis
     ports:
       - "6379:6379"
 
-  # Celery worker
   # celery:
   #   build: .
+  #   container_name: celery_worker
   #   command: ["celery", "-A", "django_chat_app", "worker", "--loglevel=info", "--concurrency=4"]
   #   depends_on:
   #     - redis
+  #     - web
   #   volumes:
   #     - .:/app
+
+  nginx:
+    image: nginx:alpine
+    container_name: django_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./compose/nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/app/static
+    depends_on:
+      - web
+      - daphne
 
 volumes:
   db_master_data:
