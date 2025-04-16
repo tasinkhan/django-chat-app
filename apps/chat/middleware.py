@@ -31,16 +31,13 @@ class JWTAuthMiddleware(BaseMiddleware):
             except User.DoesNotExist:
                 return AnonymousUser()
 
-        # Look for the token in headers
         headers = dict(scope.get("headers", []))
         authorization_header = headers.get(b"authorization", b"").decode("utf-8")
 
         token = None
-        # Check Authorization header first
         if authorization_header.startswith("Bearer "):
             token = authorization_header.split(" ")[1]
         else:
-            # Fallback to query parameters if no Authorization header
             from urllib.parse import parse_qs
 
             query_string = scope["query_string"].decode()
@@ -51,7 +48,6 @@ class JWTAuthMiddleware(BaseMiddleware):
 
         if token:
             try:
-                # Important: Provide the signing key from settings
                 token_backend = TokenBackend(
                     algorithm="HS256", signing_key=settings.SECRET_KEY
                 )
@@ -62,10 +58,8 @@ class JWTAuthMiddleware(BaseMiddleware):
                 # Attach the user to the scope if the token is valid
                 scope["user"] = await get_user(validated_token)
             except (InvalidToken, TokenError) as e:
-                # If the token is invalid, assign an AnonymousUser to the scope
                 scope["user"] = AnonymousUser()
         else:
-            # If no token is provided, assign an AnonymousUser to the scope
             scope["user"] = AnonymousUser()
 
         return await super().__call__(scope, receive, send)
